@@ -6,13 +6,18 @@ import numpy as np
 
 def print_vars(string):
     print(string)
-    print("    "+"\n    ".join(["{} : {}".format(v.name, v.get_shape().as_list()) for v in tf.get_collection(string)])
+    print("    "+"\n    ".join(["{} : {}".format(v.name, v.get_shape().as_list()) for v in tf.get_collection(string)]))
 
 def mnistloader(mnist_path = "../MNIST_data"):
     '''
     Args :
         mnist_path - string
             path of mnist folder 
+    Return :
+        train, test, val (struct)
+            ex)
+                train.imag
+                train.label
     '''
     mnist = input_data.read_data_sets(mnist_path, one_hot = True)
     train = struct()
@@ -29,6 +34,9 @@ def mnistloader(mnist_path = "../MNIST_data"):
 def softmax_cross_entropy(logits, labels):
     '''softmax_cross_entropy, lables : correct label logits : predicts'''
     return tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+def get_shape(tensor):
+    return tensor.get_shape().as_list()
 
 def conv2d(input_, filter_shape, strides = [1,1,1,1], padding = False, activation = None, batch_norm = False, istrain = False, scope = None):
     '''
@@ -90,7 +98,7 @@ def deform_conv2d(x, offset_filter, filter_shape, activation = None, scope=None)
     assert f_ic==i_c and o_ic==i_c, "# of input_channel should match but %d, %d, %d"%(i_c, f_ic, o_ic)
     assert o_oc==2*f_h*f_w, "# of output channel in offset_filter should be 2*filter_height*filter_width but %d and %d"%(o_oc, 2*f_h*f_w)
 
-    with tf.variable_scope("deform_conv"):
+    with tf.variable_scope(scope or "deform_conv"):
         offset_map = conv2d(x, offset_filter, padding=True, scope="offset_conv") # offset_map : [batch, i_h, i_w, o_oc(=2*f_h*f_w)]
     offset_map = tf.reshape(offset_map, [batch, i_h, i_w, f_h, f_w, 2])
     offset_map_h = tf.tile(tf.reshape(offset_map[...,0], [batch, i_h, i_w, f_h, f_w]), [i_c,1,1,1,1]) # offset_map_h [batch*i_c, i_h, i_w, f_h, f_w]
