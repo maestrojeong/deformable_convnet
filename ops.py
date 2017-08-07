@@ -82,11 +82,11 @@ def conv2d(input_, filter_shape, strides = [1,1,1,1], padding = False, activatio
                 return conv + b
             return activation(conv + b)
 
-def deform_conv2d(x, offset_filter, filter_shape, activation = None, scope=None):
+def deform_conv2d(x, offset_shape, filter_shape, activation = None, scope=None):
     '''
     Args:
         x - 4D tensor [batch, i_h, i_w, i_c] NHWC format
-        offset_filter - list with 4 elements
+        offset_shape - list with 4 elements
             [o_h, o_w, o_ic, o_oc]
         filter_shape - list with 4 elements
             [f_h, f_w, f_ic, f_oc]
@@ -94,12 +94,12 @@ def deform_conv2d(x, offset_filter, filter_shape, activation = None, scope=None)
 
     batch, i_h, i_w, i_c = x.get_shape().as_list()
     f_h, f_w, f_ic, f_oc = filter_shape
-    o_h, o_w, o_ic, o_oc = offset_filter
+    o_h, o_w, o_ic, o_oc = offset_shape
     assert f_ic==i_c and o_ic==i_c, "# of input_channel should match but %d, %d, %d"%(i_c, f_ic, o_ic)
-    assert o_oc==2*f_h*f_w, "# of output channel in offset_filter should be 2*filter_height*filter_width but %d and %d"%(o_oc, 2*f_h*f_w)
+    assert o_oc==2*f_h*f_w, "# of output channel in offset_shape should be 2*filter_height*filter_width but %d and %d"%(o_oc, 2*f_h*f_w)
 
     with tf.variable_scope(scope or "deform_conv"):
-        offset_map = conv2d(x, offset_filter, padding=True, scope="offset_conv") # offset_map : [batch, i_h, i_w, o_oc(=2*f_h*f_w)]
+        offset_map = conv2d(x, offset_shape, padding=True, scope="offset_conv") # offset_map : [batch, i_h, i_w, o_oc(=2*f_h*f_w)]
     offset_map = tf.reshape(offset_map, [batch, i_h, i_w, f_h, f_w, 2])
     offset_map_h = tf.tile(tf.reshape(offset_map[...,0], [batch, i_h, i_w, f_h, f_w]), [i_c,1,1,1,1]) # offset_map_h [batch*i_c, i_h, i_w, f_h, f_w]
     offset_map_w = tf.tile(tf.reshape(offset_map[...,1], [batch, i_h, i_w, f_h, f_w]), [i_c,1,1,1,1]) # offset_map_w [batch*i_c, i_h, i_w, f_h, f_w]
